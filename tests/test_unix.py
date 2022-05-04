@@ -27,7 +27,7 @@ def os_popen(mocker):
 def subprocess_check_output(mocker, config_file):
     data = bytes(config_file.read(), "utf8")
     yield mocker.patch(
-        "pycron.src.unix.subprocess.check_output",
+        "ppycron.src.unix.subprocess.check_output",
         return_value=data,
     )
 
