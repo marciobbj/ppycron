@@ -13,10 +13,12 @@ class UnixInterface(BaseInterface):
     operational_system = "linux"
 
     def __init__(self):
-        with NamedTemporaryFile("w") as f:
-            f.write("# Created automatically by Pycron =)\n")
-            f.flush()
-            os.system(f"crontab {f.name}")
+        pipe = os.popen('crontab -l')
+        if not pipe.read():
+            with NamedTemporaryFile("w") as f:
+                f.write("# Created automatically by Pycron =)\n")
+                f.flush()
+                os.system(f"crontab {f.name}")
 
     def add(self, command, interval) -> Cron:
         cron = Cron(command=command, interval=interval)
