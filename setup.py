@@ -4,7 +4,7 @@ setup(
     name='ppycron',
     version='0.0.5',
     packages=find_packages(),
-    url='',
+    url='https://github.com/marciobbj/ppycron',
     install_requires=[
         "attrs==21.4.0",
         "black==22.3.0",
@@ -25,5 +25,5 @@ setup(
     license='MIT License',
     author='Marcio Bernardes Barbosa Junior',
     author_email='marciobernardes@live.com',
-    description='ppycron lets you manage crontabs in Linux and Windows systems using the same interface.'
+    description='PPyCron lets you manage crontabs in Linux based systems.'
 )
