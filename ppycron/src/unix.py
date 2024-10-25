@@ -1,9 +1,9 @@
 import logging
+import subprocess
+import os
 from tempfile import NamedTemporaryFile
 from typing import List, Union
 from ppycron.src.base import BaseInterface, Cron
-import subprocess
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -13,107 +13,113 @@ class UnixInterface(BaseInterface):
     operational_system = "linux"
 
     def __init__(self):
-        pipe = os.popen('crontab -l')
-        if not pipe.read():
-            with NamedTemporaryFile("w") as f:
-                f.write("# Created automatically by Pycron =)\n")
-                f.flush()
-                os.system(f"crontab {f.name}")
+        with NamedTemporaryFile("w", delete=False) as f:
+            f.write("# Created automatically by Pycron =)\n")
+            f.flush()
+            subprocess.run(["crontab", f.name], check=True)
+            os.unlink(f.name)
 
     def add(self, command, interval) -> Cron:
         cron = Cron(command=command, interval=interval)
-        pipe = os.popen("crontab -l")
-        current = pipe.read()
+        try:
+            current = subprocess.check_output(["crontab", "-l"]).decode("utf-8")
+        except subprocess.CalledProcessError:
+            current = ""  # If no crontab exists, start with an empty string
+
         current += str(cron) + "\n"
-        with NamedTemporaryFile("w") as f:
-            f.write(str(current))
+
+        with NamedTemporaryFile("w", delete=False) as f:
+            f.write(current)
             f.flush()
-            os.system(f"crontab {f.name}")
+            subprocess.run(["crontab", f.name], check=True)
+            os.unlink(f.name)
+
         return cron
 
     def get_all(self) -> Union[List[Cron], List]:
-        output = subprocess.check_output(["crontab", "-l"])
+        try:
+            output = subprocess.check_output(["crontab", "-l"])
+        except subprocess.CalledProcessError:
+            return []  # No crontab available
+
         crons = []
-        for line in output.decode("utf8").split("\n"):
-            is_comment = line.startswith("#")
-            if is_comment:
+        for line in output.decode("utf-8").split("\n"):
+            if line.strip() == "" or line.startswith("#"):
                 continue
-            interval = " ".join(
-                line.split(" ")[:5]
-            )  # get all characters between spaces until its fifth element
-            command = " ".join(
-                line.split(" ")[5:]
-            ).strip()  # join the last elements, they are the command
-            name = " ".join(line.split(" ")[-1:])  # gets the name of the crontab
-            if name:
+
+            interval = " ".join(line.split()[:5])
+            command = " ".join(line.split()[5:]).strip()
+
+            if command:
                 crons.append(Cron(command=command, interval=interval))
+
         return crons
 
     def edit(self, cron_command, **kwargs) -> bool:
-        class NotEnoughInformation(Exception):
-            pass
-
         if not cron_command:
-            raise NotEnoughInformation()
+            raise ValueError("Cron command is required to edit an entry.")
 
-        new_command = cron_command
+        new_command = kwargs.get("command", cron_command)
         new_interval = kwargs.get("interval")
-        if not all([new_interval, new_command]):
-            raise NotEnoughInformation("Cannot edit without information")
-        output = subprocess.check_output(["crontab", "-l"])
+
+        try:
+            output = subprocess.check_output(["crontab", "-l"]).decode("utf-8")
+        except subprocess.CalledProcessError:
+            return False
+
         lines = []
-        for line in output.decode("utf8").split("\n"):
-            is_comment = line.startswith("#")
-            if is_comment:
-                lines.append(line + "\n")
+        modified = False
+        for line in output.split("\n"):
+            if line.strip() == "" or line.startswith("#"):
+                lines.append(line)
                 continue
-            interval = " ".join(
-                line.split(" ")[:5]
-            )  # get all characters between spaces until its fifth element
-            command = " ".join(
-                line.split(" ")[5:]
-            ).strip()  # join the last elements, they are the command
-            # name = " ".join(line.split(" ")[-1:])  # gets the name of the crontab
+
+            interval = " ".join(line.split()[:5])
+            command = " ".join(line.split()[5:]).strip()
+
             if command == cron_command:
-                # if we find the line, we replace the contents
                 if new_interval:
                     line = line.replace(interval, new_interval)
                 if new_command:
                     line = line.replace(command, new_command)
-            lines.append(line + "\n")
-        current = ""
-        for line in lines:
-            current += line
-        with NamedTemporaryFile("w") as f:
-            f.write(str(current))
-            f.flush()
-            os.system(f"crontab {f.name}")
-        return True
+                modified = True
+
+            lines.append(line)
+
+        if modified:
+            current = "\n".join(lines) + "\n"
+            with NamedTemporaryFile("w", delete=False) as f:
+                f.write(current)
+                f.flush()
+                subprocess.run(["crontab", f.name], check=True)
+                os.unlink(f.name)
+            return True
+        return False
 
     def delete(self, cron_command) -> bool:
-        class NotEnoughInformation(Exception):
-            pass
-
         if not cron_command:
-            raise NotEnoughInformation("You should try pass the cron name")
+            raise ValueError("Cron command is required to delete an entry.")
 
-        output = subprocess.check_output(["crontab", "-l"])
+        try:
+            output = subprocess.check_output(["crontab", "-l"]).decode("utf-8")
+        except subprocess.CalledProcessError:
+            return False
+
         lines = []
-        for line in output.decode("utf8").split("\n"):
-            is_comment = line.startswith("#")
-            if is_comment:
-                lines.append(line + "\n")
+        for line in output.split("\n"):
+            if line.strip() == "" or line.startswith("#"):
+                lines.append(line)
                 continue
-            command = " ".join(line.split(" ")[5:])  # gets the command of the crontab
-            if command == cron_command:
-                # Delete line
-                line = ""
-            lines.append(line + "\n")
-        current = ""
-        for line in lines:
-            current += line
-        with NamedTemporaryFile("w") as f:
-            f.write(str(current))
+
+            command = " ".join(line.split()[5:]).strip()
+            if command != cron_command:
+                lines.append(line)
+
+        current = "\n".join(lines) + "\n"
+        with NamedTemporaryFile("w", delete=False) as f:
+            f.write(current)
             f.flush()
-            os.system(f"crontab {f.name}")
+            subprocess.run(["crontab", f.name], check=True)
+            os.unlink(f.name)
+
         return True

@@ -1,39 +1,33 @@
 import os
-
 import pytest
-
 from ppycron.src.base import Cron
 
 
 @pytest.fixture(scope="function")
-def config_file():
-    # TODO: use temp file here
-    cronfile = open(os.path.abspath("tests/fixtures/crontab_file"), "r")
-    yield cronfile
-    cronfile.close()
+def config_file(tmp_path):
+    # Using a temporary file to simulate the crontab content
+    cronfile = tmp_path / "crontab_file"
+    cronfile.write_text("# Sample cron jobs for testing\n")
+    return cronfile
 
 
 @pytest.fixture
-def os_system(mocker):
-    yield mocker.patch("ppycron.src.unix.os.system")
-
-
-@pytest.fixture
-def os_popen(mocker):
-    yield mocker.patch("ppycron.src.unix.os.popen")
+def subprocess_run(mocker):
+    yield mocker.patch("ppycron.src.unix.subprocess.run")
 
 
 @pytest.fixture
 def subprocess_check_output(mocker, config_file):
-    data = bytes(config_file.read(), "utf8")
+    # Use the content of the temp file as mock data for check_output
+    data = config_file.read_text()
     yield mocker.patch(
         "ppycron.src.unix.subprocess.check_output",
-        return_value=data,
+        return_value=data.encode("utf-8"),
     )
 
 
 @pytest.fixture
-def crontab(os_system):
+def crontab(subprocess_run):
     from ppycron.src.unix import UnixInterface
 
     return UnixInterface()
@@ -71,15 +65,22 @@ def crontab(os_system):
     ],
 )
 def test_add_cron(
-    crontab, config_file, cron_line, interval, command, mocker, os_system, os_popen
+    crontab,
+    mocker,
+    config_file,
+    cron_line,
+    interval,
+    command,
+    subprocess_run,
+    subprocess_check_output,
 ):
     cron = crontab.add(command=command, interval=interval)
 
     assert isinstance(cron, Cron)
     assert cron.command == command
     assert cron.interval == interval
-    os_system.assert_called()
-    os_popen.assert_called()
+    # Ensure that the crontab command was executed
+    subprocess_run.assert_called_with(["crontab", mocker.ANY], check=True)
 
 
 @pytest.mark.parametrize(
@@ -118,28 +119,32 @@ def test_add_cron(
     ],
 )
 def test_get_cron_jobs(
-    crontab, config_file, cron_line, interval, command, mocker, subprocess_check_output
+    crontab, config_file, cron_line, interval, command, subprocess_check_output
 ):
     crontab.get_all()
-    subprocess_check_output.assert_called()
+    subprocess_check_output.assert_called_with(["crontab", "-l"])
 
 
-def test_edit_cron(crontab, config_file, mocker, subprocess_check_output, os_popen):
+def test_edit_cron(
+    crontab, config_file, subprocess_check_output, subprocess_run, mocker
+):
     job = crontab.add(command='echo "hello"', interval="*/15 0 * * *")
     crontab.edit(
         cron_command=job.command, command="echo edited-command", interval="*/15 0 * * *"
     )
-    assert subprocess_check_output.called
-    assert os_popen.called
+
+    subprocess_check_output.assert_called_with(["crontab", "-l"])
+    subprocess_run.assert_called_with(["crontab", mocker.ANY], check=True)
 
 
-def test_delete_cron(crontab, config_file, mocker, os_popen, subprocess_check_output, os_system):
+def test_delete_cron(
+    crontab, config_file, subprocess_check_output, subprocess_run, mocker
+):
     crontab.add(
         command="echo job_to_be_deleted",
         interval="*/15 0 * * *",
     )
     crontab.delete(cron_command="echo job_to_be_deleted")
 
-    os_popen.assert_called()
-    subprocess_check_output.assert_called()
-    os_system.assert_called()
+    subprocess_check_output.assert_called_with(["crontab", "-l"])
+    subprocess_run.assert_called_with(["crontab", mocker.ANY], check=True)
