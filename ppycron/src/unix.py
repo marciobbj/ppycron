@@ -40,26 +40,47 @@ class UnixInterface(BaseInterface):
         try:
             output = subprocess.check_output(["crontab", "-l"])
         except subprocess.CalledProcessError:
-            return []  # No crontab available
+            return []  # Nenhum crontab disponível
 
         crons = []
         for line in output.decode("utf-8").split("\n"):
-            if line.strip() == "" or line.startswith("#"):
+            line = line.strip()
+            if not line or line.startswith("#"):
                 continue
 
-            interval = " ".join(line.split()[:5])
-            command = " ".join(line.split()[5:]).strip()
+            cron_id = ""
+            # Verifica se a linha contém o identificador no formato "# id: <uuid>"
+            if "# id:" in line:
+                cron_line, id_comment = line.split("# id:", 1)
+                cron_id = id_comment.strip()
+            else:
+                cron_line = line
 
-            if command:
-                crons.append(Cron(command=command, interval=interval))
+            # Divide a parte do crontab para obter o intervalo e comando
+            splitted = cron_line.strip().split()
+            if len(splitted) < 6:
+                continue  # Linha com formato inesperado, ignora
+
+            interval = " ".join(splitted[:5])
+            command = " ".join(splitted[5:]).strip()
+
+            # Cria a instância do Cron com o id extraído (ou vazio, se não existir)
+            crons.append(Cron(command=command, interval=interval, id=cron_id))
 
         return crons
 
-    def edit(self, cron_command, **kwargs) -> bool:
-        if not cron_command:
-            raise ValueError("Cron command is required to edit an entry.")
+    def edit(self, cron_id, **kwargs) -> bool:
+        """
+        Edita uma entrada do crontab usando o identificador único `cron_id`.
+        Parâmetros opcionais:
+            command: novo comando a ser executado.
+            interval: novo intervalo no formato do crontab.
+        Retorna True se a edição for realizada, caso contrário False.
+        """
+        if not cron_id:
+            raise ValueError("É necessário informar o identificador da entrada de cron.")
 
-        new_command = kwargs.get("command", cron_command)
+        new_command = kwargs.get("command")
         new_interval = kwargs.get("interval")
 
         try:
@@ -69,19 +90,38 @@ class UnixInterface(BaseInterface):
 
         lines = []
         modified = False
+
         for line in output.split("\n"):
-            if line.strip() == "" or line.startswith("#"):
+            # Se a linha estiver vazia ou for comentário genérico, mantemos inalterada
+            if line.strip() == "" or (line.strip().startswith("#") and f"id: {cron_id}" not in line):
                 lines.append(line)
                 continue
 
-            interval = " ".join(line.split()[:5])
-            command = " ".join(line.split()[5:]).strip()
+            # Verifica se o identificador está na linha
+            if f"id: {cron_id}" in line:
+                # Separa a linha em duas partes: o cron em si e o comentário do id
+                try:
+                    cron_part, comment_part = line.split("# id:", 1)
+                except ValueError:
+                    cron_part = line
+                    comment_part = f" id: {cron_id}"
 
-            if command == cron_command:
-                if new_interval:
-                    line = line.replace(interval, new_interval)
-                if new_command:
-                    line = line.replace(command, new_command)
+                # Separa a parte cron para extrair o intervalo e comando antigos
+                splitted = cron_part.strip().split()
+                if len(splitted) < 6:
+                    # Formato inesperado, pula a edição
+                    lines.append(line)
+                    continue
+
+                old_interval = " ".join(splitted[:5])
+                old_command = " ".join(splitted[5:])
+
+                # Define os novos valores (caso não sejam informados, mantém os antigos)
+                updated_interval = new_interval if new_interval else old_interval
+                updated_command = new_command if new_command else old_command
+
+                # Recompõe a linha mantendo o comentário com o id
+                line = f"{updated_interval} {updated_command} # id: {cron_id}"
                 modified = True
 
             lines.append(line)
@@ -94,11 +134,12 @@ class UnixInterface(BaseInterface):
                 subprocess.run(["crontab", f.name], check=True)
                 os.unlink(f.name)
             return True
+
         return False
 
-    def delete(self, cron_command) -> bool:
-        if not cron_command:
-            raise ValueError("Cron command is required to delete an entry.")
+    def delete(self, cron_id) -> bool:
+        if not cron_id:
+            raise ValueError("É necessário informar o identificador da entrada de cron.")
 
         try:
             output = subprocess.check_output(["crontab", "-l"]).decode("utf-8")
@@ -106,20 +147,23 @@ class UnixInterface(BaseInterface):
             return False
 
         lines = []
+        removed = False
+
         for line in output.split("\n"):
-            if line.strip() == "" or line.startswith("#"):
-                lines.append(line)
+            # Mantém as linhas que não contêm o identificador
+            if f"id: {cron_id}" in line:
+                removed = True
                 continue
+            lines.append(line)
 
-            command = " ".join(line.split()[5:]).strip()
-            if command != cron_command:
-                lines.append(line)
+        if removed:
+            current = "\n".join(lines) + "\n"
+            with NamedTemporaryFile("w", delete=False) as f:
+                f.write(current)
+                f.flush()
+                subprocess.run(["crontab", f.name], check=True)
+                os.unlink(f.name)
+            return True
 
-        current = "\n".join(lines) + "\n"
-        with NamedTemporaryFile("w", delete=False) as f:
-            f.write(current)
-            f.flush()
-            subprocess.run(["crontab", f.name], check=True)
-            os.unlink(f.name)
+        return False
 
-        return True

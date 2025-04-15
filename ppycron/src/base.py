@@ -1,5 +1,6 @@
 import abc
 import dataclasses
+import uuid
 from typing import List, Optional
 
 
@@ -7,9 +8,10 @@ from typing import List, Optional
 class Cron:
     command: str
     interval: str
+    id: str = dataclasses.field(default_factory=lambda: str(uuid.uuid4()))
 
     def __str__(self):
-        return f"{self.interval} {self.command}"
+        return f"{self.interval} {self.command} # id: {self.id}"
 
 
 class BaseInterface(metaclass=abc.ABCMeta):
