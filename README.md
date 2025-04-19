@@ -1,6 +1,6 @@
 ## PPyCron
 
-Simple tool that allows users to manage cron jobs for Linux.
+Simple tool that allows users to manage cron jobs for Linux and Mac OS.
 
 ## Installing
 Just type in the terminal:
