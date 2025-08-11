@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ppycron',
-    version='0.0.7',
+    version="1.0.0",
     packages=find_packages(),
     url='https://github.com/marciobbj/ppycron',
     install_requires=[
@@ -25,5 +25,29 @@ setup(
     license='MIT License',
     author='Marcio Bernardes Barbosa Junior',
     author_email='marciobernardes@live.com',
-    description='PPyCron lets you manage crontabs in Linux based systems.'
+    description='PPyCron is a cross-platform Python library for managing scheduled tasks on Linux (cron) and Windows (Task Scheduler).',
+    long_description=open('README.md').read(),
+    long_description_content_type='text/markdown',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Topic :: System :: Systems Administration',
+        'Topic :: Utilities',
+    ],
+    python_requires='>=3.7',
+    keywords='cron scheduler task windows linux unix cross-platform',
+    project_urls={
+        'Bug Reports': 'https://github.com/marciobbj/ppycron/issues',
+        'Source': 'https://github.com/marciobbj/ppycron',
+        'Documentation': 'https://github.com/marciobbj/ppycron#readme',
+    },
 )
