@@ -1,0 +1,17 @@
+{
+    "task_name": "my_scheduled_task",
+    "cron_schedule": "0 0 * * *",
+    "max_retention": 30,
+    "enabled": true,
+    "task_type": "backup",
+    "task_config": {
+        "source_path": "data/",
+        "backup_path": "backups/",
+        "file_pattern": "*",
+        "exclude_patterns": ["*.tmp", "*.log"]
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "task_service.log"
+    }
+}
