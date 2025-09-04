@@ -49,7 +49,22 @@ def example_basic_operations():
         for task in tasks:
             logger.info(f"  - ID: {task.id}, Command: {task.command}, Interval: {task.interval}")
         
-        # 3. Get a specific task by ID
+        # 3. Test consistency: verify that the task we just added is in the list
+        logger.info("Testing consistency between add() and get_all()...")
+        found_task = None
+        for task in tasks:
+            if task.id == cron.id:
+                found_task = task
+                break
+        
+        if found_task:
+            logger.info("✓ Consistency test passed: Task found in get_all()")
+            logger.info(f"  Original: {cron.command}")
+            logger.info(f"  Retrieved: {found_task.command}")
+        else:
+            logger.error("✗ Consistency test failed: Task not found in get_all()")
+        
+        # 4. Get a specific task by ID
         logger.info(f"Getting task with ID: {cron.id}")
         retrieved_task = interface.get_by_id(cron.id)
         if retrieved_task:
@@ -57,7 +72,7 @@ def example_basic_operations():
         else:
             logger.warning("Task not found")
         
-        # 4. Edit the task
+        # 5. Edit the task
         logger.info("Editing the task...")
         success = interface.edit(
             cron_id=cron.id,
@@ -69,13 +84,13 @@ def example_basic_operations():
         else:
             logger.error("Failed to update task")
         
-        # 5. List tasks again to see the changes
+        # 6. List tasks again to see the changes
         logger.info("Listing tasks after update...")
         tasks = interface.get_all()
         for task in tasks:
             logger.info(f"  - ID: {task.id}, Command: {task.command}, Interval: {task.interval}")
         
-        # 6. Delete the task
+        # 7. Delete the task
         logger.info("Deleting the task...")
         success = interface.delete(cron_id=cron.id)
         if success:
@@ -83,13 +98,79 @@ def example_basic_operations():
         else:
             logger.error("Failed to delete task")
         
-        # 7. Verify deletion
+        # 8. Verify deletion
         logger.info("Verifying deletion...")
         tasks = interface.get_all()
         logger.info(f"Remaining tasks: {len(tasks)}")
         
     except Exception as e:
         logger.error(f"Error in basic operations: {e}")
+
+
+def example_auxiliary_methods():
+    """Demonstrate auxiliary methods."""
+    logger.info("=== Auxiliary Methods Example ===")
+    
+    try:
+        interface = get_interface()
+        
+        # Create multiple tasks for testing
+        tasks = [
+            ("echo 'Task 1'", "0 2 * * *"),
+            ("echo 'Task 2'", "0 3 * * *"),
+            ("echo 'Task 3'", "0 4 * * *"),
+            ("echo 'Task 4'", "0 5 * * *"),
+        ]
+        
+        created_tasks = []
+        for command, interval in tasks:
+            cron = interface.add(command=command, interval=interval)
+            created_tasks.append(cron)
+            logger.info(f"Created task: {cron.id}")
+        
+        # Test auxiliary methods
+        logger.info(f"Total tasks: {interface.count()}")
+        
+        # Test exists method
+        if created_tasks:
+            exists = interface.exists(created_tasks[0].id)
+            logger.info(f"Task {created_tasks[0].id} exists: {exists}")
+        
+        # Test get_by_command
+        echo_tasks = interface.get_by_command("echo 'Task 1'")
+        logger.info(f"Tasks with command 'echo Task 1': {len(echo_tasks)}")
+        
+        # Test get_by_interval
+        daily_tasks = interface.get_by_interval("0 2 * * *")
+        logger.info(f"Tasks with interval '0 2 * * *': {len(daily_tasks)}")
+        
+        # Test update methods
+        if created_tasks:
+            success = interface.update_command(created_tasks[0].id, "echo 'Updated Task 1'")
+            logger.info(f"Updated command: {success}")
+            
+            success = interface.update_interval(created_tasks[0].id, "0 6 * * *")
+            logger.info(f"Updated interval: {success}")
+        
+        # Test duplicate method
+        if created_tasks:
+            duplicated = interface.duplicate(created_tasks[0].id, "0 7 * * *")
+            if duplicated:
+                logger.info(f"Duplicated task with new interval: {duplicated.id}")
+        
+        # Test delete_by methods
+        deleted_count = interface.delete_by_command("echo 'Task 2'")
+        logger.info(f"Deleted {deleted_count} tasks with command 'echo Task 2'")
+        
+        deleted_count = interface.delete_by_interval("0 4 * * *")
+        logger.info(f"Deleted {deleted_count} tasks with interval '0 4 * * *'")
+        
+        # Clear remaining tasks
+        interface.clear_all()
+        logger.info("Cleared all remaining tasks")
+        
+    except Exception as e:
+        logger.error(f"Error in auxiliary methods example: {e}")
 
 
 def example_multiple_tasks():
@@ -121,6 +202,14 @@ def example_multiple_tasks():
         all_tasks = interface.get_all()
         for task in all_tasks:
             logger.info(f"  - {task.interval} {task.command} (ID: {task.id})")
+        
+        # Test persistence: verify all tasks are still there
+        logger.info("Testing persistence...")
+        tasks_after = interface.get_all()
+        if len(tasks_after) == len(created_tasks):
+            logger.info("✓ Persistence test passed: All tasks are still present")
+        else:
+            logger.error(f"✗ Persistence test failed: Expected {len(created_tasks)}, got {len(tasks_after)}")
         
         # Clear all tasks
         logger.info("Clearing all tasks...")
@@ -215,6 +304,37 @@ def example_error_handling():
         logger.error(f"Error in error handling example: {e}")
 
 
+def example_cron_object_methods():
+    """Demonstrate Cron object methods."""
+    logger.info("=== Cron Object Methods Example ===")
+    
+    try:
+        interface = get_interface()
+        
+        # Create a task
+        cron = interface.add(
+            command="echo 'Test task'",
+            interval="0 12 * * *"
+        )
+        
+        # Test to_dict method
+        cron_dict = cron.to_dict()
+        logger.info(f"Cron as dictionary: {cron_dict}")
+        
+        # Test from_dict method
+        new_cron = Cron.from_dict(cron_dict)
+        logger.info(f"Recreated cron object: {new_cron}")
+        
+        # Test string representation
+        logger.info(f"Cron string representation: {cron}")
+        
+        # Clean up
+        interface.delete(cron.id)
+        
+    except Exception as e:
+        logger.error(f"Error in cron object methods example: {e}")
+
+
 def main():
     """Run all examples."""
     logger.info("Starting PPyCron examples...")
@@ -224,6 +344,9 @@ def main():
     example_basic_operations()
     print()
     
+    example_auxiliary_methods()
+    print()
+    
     example_multiple_tasks()
     print()
     
@@ -231,6 +354,9 @@ def main():
     print()
     
     example_error_handling()
+    print()
+    
+    example_cron_object_methods()
     print()
     
     logger.info("Examples completed!")

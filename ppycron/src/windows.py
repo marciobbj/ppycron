@@ -197,6 +197,33 @@ class WindowsInterface(BaseInterface):
 </Task>"""
         return xml_template
 
+    def _get_all_tasks(self) -> List[str]:
+        """Get all task names from Task Scheduler."""
+        try:
+            output = subprocess.check_output(
+                ["schtasks", "/query", "/fo", "csv", "/nh"], 
+                stderr=subprocess.PIPE
+            ).decode("utf-8")
+            
+            tasks = []
+            for line in output.split("\n"):
+                if not line.strip():
+                    continue
+                
+                try:
+                    parts = line.split('","')
+                    if len(parts) >= 1:
+                        task_name = parts[0].strip('"')
+                        tasks.append(task_name)
+                except Exception as e:
+                    logger.warning(f"Error parsing task line: {line}, error: {e}")
+                    continue
+            
+            return tasks
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to get task list: {e}")
+            return []
+
     def add(self, command: str, interval: str) -> Cron:
         """Add a new scheduled task."""
         if not self._validate_command(command):
@@ -238,45 +265,25 @@ class WindowsInterface(BaseInterface):
         """Get all scheduled tasks created by Pycron."""
         try:
             # Get all tasks
-            output = subprocess.check_output(
-                ["schtasks", "/query", "/fo", "csv", "/nh"], 
-                stderr=subprocess.PIPE
-            ).decode("utf-8")
-        except subprocess.CalledProcessError:
-            logger.info("No scheduled tasks found, returning empty list")
-            return []
-
-        crons = []
-        for line in output.split("\n"):
-            if not line.strip():
-                continue
+            all_tasks = self._get_all_tasks()
             
-            try:
-                # Parse CSV format: "TaskName","Next Run Time","Status"
-                parts = line.split('","')
-                if len(parts) < 1:
-                    continue
-                
-                task_name = parts[0].strip('"')
-                
+            crons = []
+            for task_name in all_tasks:
                 # Only process Pycron tasks
                 if not task_name.startswith("Pycron_"):
                     continue
-                
-                # Extract cron ID from task name
-                cron_id = task_name.replace("Pycron_", "")
                 
                 # Get task details to extract command and schedule
                 task_details = self._get_task_details(task_name)
                 if task_details:
                     crons.append(task_details)
                     
-            except Exception as e:
-                logger.error(f"Error parsing task line: {line}, error: {e}")
-                continue
-
-        logger.info(f"Retrieved {len(crons)} Windows scheduled tasks")
-        return crons
+            logger.info(f"Retrieved {len(crons)} Windows scheduled tasks")
+            return crons
+            
+        except Exception as e:
+            logger.error(f"Failed to get all tasks: {e}")
+            return []
 
     def _get_task_details(self, task_name: str) -> Optional[Cron]:
         """Get detailed information about a specific task."""
@@ -424,21 +431,10 @@ class WindowsInterface(BaseInterface):
         """Clear all Pycron scheduled tasks."""
         try:
             # Get all Pycron tasks
-            output = subprocess.check_output(
-                ["schtasks", "/query", "/fo", "csv", "/nh"], 
-                stderr=subprocess.PIPE
-            ).decode("utf-8")
+            all_tasks = self._get_all_tasks()
             
             deleted_count = 0
-            for line in output.split("\n"):
-                if not line.strip():
-                    continue
-                
-                parts = line.split('","')
-                if len(parts) < 1:
-                    continue
-                
-                task_name = parts[0].strip('"')
+            for task_name in all_tasks:
                 if task_name.startswith("Pycron_"):
                     try:
                         subprocess.run(["schtasks", "/delete", "/tn", task_name, "/f"], 
@@ -450,7 +446,7 @@ class WindowsInterface(BaseInterface):
             logger.info(f"Cleared {deleted_count} Windows scheduled tasks")
             return True
             
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             logger.error(f"Failed to clear Windows tasks: {e}")
             return False
 
