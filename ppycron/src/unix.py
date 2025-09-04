@@ -5,6 +5,7 @@ import re
 from tempfile import NamedTemporaryFile
 from typing import List, Union, Optional
 from ppycron.src.base import BaseInterface, Cron
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -22,15 +23,8 @@ class UnixInterface(BaseInterface):
         except FileNotFoundError:
             raise RuntimeError("crontab command not found. Please ensure cron is installed.")
         
-        # Initialize with empty crontab if needed
-        try:
-            with NamedTemporaryFile("w", delete=False) as f:
-                f.write("# Created automatically by Pycron =)\n")
-                f.flush()
-                subprocess.run(["crontab", f.name], check=True, capture_output=True)
-                os.unlink(f.name)
-        except subprocess.CalledProcessError as e:
-            logger.warning(f"Failed to initialize crontab: {e}")
+        # Removido o código que limpava o crontab automaticamente
+        # Isso causava a perda de jobs existentes
 
     def _validate_interval(self, interval: str) -> bool:
         """Validate cron interval format."""
@@ -86,6 +80,29 @@ class UnixInterface(BaseInterface):
             return False
         return True
 
+    def _get_current_crontab(self) -> str:
+        """Get current crontab content safely."""
+        try:
+            current = subprocess.check_output(["crontab", "-l"], 
+                                            stderr=subprocess.PIPE).decode("utf-8")
+            return current
+        except subprocess.CalledProcessError:
+            # If no crontab exists, return empty string
+            return ""
+
+    def _write_crontab(self, content: str) -> bool:
+        """Write content to crontab safely."""
+        try:
+            with NamedTemporaryFile("w", delete=False) as f:
+                f.write(content)
+                f.flush()
+                subprocess.run(["crontab", f.name], check=True, capture_output=True)
+                os.unlink(f.name)
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to write crontab: {e}")
+            return False
+
     def add(self, command: str, interval: str) -> Cron:
         """Add a new cron job."""
         if not self._validate_command(command):
@@ -98,36 +115,28 @@ class UnixInterface(BaseInterface):
         
         try:
             # Get current crontab
-            try:
-                current = subprocess.check_output(["crontab", "-l"], 
-                                                stderr=subprocess.PIPE).decode("utf-8")
-            except subprocess.CalledProcessError:
-                current = ""  # If no crontab exists, start with an empty string
+            current = self._get_current_crontab()
 
             # Add new cron job
             current += str(cron) + "\n"
 
             # Write back to crontab
-            with NamedTemporaryFile("w", delete=False) as f:
-                f.write(current)
-                f.flush()
-                subprocess.run(["crontab", f.name], check=True, capture_output=True)
-                os.unlink(f.name)
+            if not self._write_crontab(current):
+                raise RuntimeError("Failed to write crontab")
 
             logger.info(f"Successfully added cron job with ID: {cron.id}")
             return cron
             
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             logger.error(f"Failed to add cron job: {e}")
             raise RuntimeError(f"Failed to add cron job: {e}")
 
     def get_all(self) -> List[Cron]:
         """Get all cron jobs."""
         try:
-            output = subprocess.check_output(["crontab", "-l"], 
-                                           stderr=subprocess.PIPE).decode("utf-8")
-        except subprocess.CalledProcessError:
-            logger.info("No crontab found, returning empty list")
+            output = self._get_current_crontab()
+        except Exception as e:
+            logger.error(f"Failed to read crontab: {e}")
             return []
 
         crons = []
@@ -162,6 +171,11 @@ class UnixInterface(BaseInterface):
                 if not self._validate_command(command):
                     logger.warning(f"Skipping invalid command in line {line_num}: {command}")
                     continue
+
+                # Se não tem ID, gera um novo (para compatibilidade com jobs existentes)
+                if not cron_id:
+                    cron_id = str(uuid.uuid4())
+                    logger.info(f"Generated new ID for existing cron job: {cron_id}")
 
                 crons.append(Cron(command=command, interval=interval, id=cron_id))
                 
@@ -200,10 +214,7 @@ class UnixInterface(BaseInterface):
         
         try:
             # Get current crontab
-            current_crontab = subprocess.check_output(
-                ["crontab", "-l"], 
-                stderr=subprocess.PIPE
-            ).decode("utf-8")
+            current_crontab = self._get_current_crontab()
             
             lines = current_crontab.strip().split('\n') if current_crontab.strip() else []
             updated_lines = []
@@ -238,12 +249,9 @@ class UnixInterface(BaseInterface):
                 return False
             
             # Write updated crontab
-            with NamedTemporaryFile(mode='w', delete=False) as f:
-                f.write('\n'.join(updated_lines) + '\n')
-                temp_file = f.name
-            
-            subprocess.run(["crontab", temp_file], check=True, capture_output=True)
-            os.unlink(temp_file)
+            updated_content = '\n'.join(updated_lines) + '\n'
+            if not self._write_crontab(updated_content):
+                raise RuntimeError("Failed to write updated crontab")
             
             return True
             
@@ -257,10 +265,9 @@ class UnixInterface(BaseInterface):
             raise ValueError("Cron ID is required")
 
         try:
-            output = subprocess.check_output(["crontab", "-l"], 
-                                           stderr=subprocess.PIPE).decode("utf-8")
-        except subprocess.CalledProcessError:
-            logger.error("Failed to read crontab")
+            output = self._get_current_crontab()
+        except Exception as e:
+            logger.error(f"Failed to read crontab: {e}")
             return False
 
         lines = []
@@ -275,16 +282,11 @@ class UnixInterface(BaseInterface):
             lines.append(line)
 
         if removed:
-            try:
-                current = "\n".join(lines) + "\n"
-                with NamedTemporaryFile("w", delete=False) as f:
-                    f.write(current)
-                    f.flush()
-                    subprocess.run(["crontab", f.name], check=True, capture_output=True)
-                    os.unlink(f.name)
+            current = "\n".join(lines) + "\n"
+            if self._write_crontab(current):
                 return True
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Failed to update crontab: {e}")
+            else:
+                logger.error("Failed to write updated crontab")
                 return False
 
         logger.warning(f"No cron job found with ID: {cron_id}")
@@ -293,14 +295,15 @@ class UnixInterface(BaseInterface):
     def clear_all(self) -> bool:
         """Clear all cron jobs."""
         try:
-            with NamedTemporaryFile("w", delete=False) as f:
-                f.write("# Cleared by Pycron\n")
-                f.flush()
-                subprocess.run(["crontab", f.name], check=True, capture_output=True)
-                os.unlink(f.name)
-            logger.info("All cron jobs cleared successfully")
-            return True
-        except subprocess.CalledProcessError as e:
+            # Write empty crontab with just a comment
+            content = "# Cleared by Pycron\n"
+            if self._write_crontab(content):
+                logger.info("All cron jobs cleared successfully")
+                return True
+            else:
+                logger.error("Failed to clear crontab")
+                return False
+        except Exception as e:
             logger.error(f"Failed to clear crontab: {e}")
             return False
 

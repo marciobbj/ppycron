@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-97%20passing%20%F0%9F%8E%89-brightgreen.svg)](https://github.com/yourusername/ppycron)
+[![Tests](https://img.shields.io/badge/tests-138%20passing%20%F0%9F%8E%89-brightgreen.svg)](https://github.com/yourusername/ppycron)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/yourusername/ppycron)
 
 **PPyCron** is a modern, cross-platform Python library for managing scheduled tasks. It provides a unified API for both Unix/Linux cron jobs and Windows Task Scheduler, making it easy to schedule and manage tasks across different operating systems.
@@ -15,8 +15,10 @@
 - 🎯 **Unified API**: Same interface across all platforms
 - 🔍 **Advanced Queries**: Find tasks by ID, get all tasks, validate formats
 - ⚡ **High Performance**: Optimized for handling large numbers of tasks
-- 🧪 **Fully Tested**: 97 tests with 100% success rate
+- 🧪 **Fully Tested**: 138 tests with 100% success rate
 - 🚀 **Production Ready**: Stable and reliable for production use
+- 🔧 **Auxiliary Methods**: Helper methods for common operations
+- 💾 **Data Persistence**: Jobs created via API persist correctly
 
 ## 🚀 Quick Start
 
@@ -45,6 +47,10 @@ cron = interface.add(
 )
 
 print(f"Created task with ID: {cron.id}")
+
+# Get all tasks
+tasks = interface.get_all()
+print(f"Total tasks: {len(tasks)}")
 ```
 
 ## 📋 API Reference
@@ -153,6 +159,102 @@ assert interface.is_valid_cron_format("0 0 * * 0")   # Weekly on Sunday
 # Invalid formats
 assert not interface.is_valid_cron_format("60 * * * *")  # Invalid minute
 assert not interface.is_valid_cron_format("* * * *")     # Missing field
+```
+
+### Auxiliary Methods
+
+#### `count() -> int`
+Get the total number of scheduled tasks.
+
+```python
+total_tasks = interface.count()
+print(f"You have {total_tasks} scheduled tasks")
+```
+
+#### `exists(cron_id: str) -> bool`
+Check if a scheduled task exists by ID.
+
+```python
+if interface.exists("my-task-id"):
+    print("Task exists")
+else:
+    print("Task not found")
+```
+
+#### `get_by_command(command: str) -> List[Cron]`
+Get all scheduled tasks with a specific command.
+
+```python
+backup_tasks = interface.get_by_command("backup.sh")
+print(f"Found {len(backup_tasks)} backup tasks")
+```
+
+#### `get_by_interval(interval: str) -> List[Cron]`
+Get all scheduled tasks with a specific interval.
+
+```python
+daily_tasks = interface.get_by_interval("0 2 * * *")
+print(f"Found {len(daily_tasks)} daily tasks at 2 AM")
+```
+
+#### `delete_by_command(command: str) -> int`
+Delete all scheduled tasks with a specific command. Returns number of deleted tasks.
+
+```python
+deleted_count = interface.delete_by_command("old_script.py")
+print(f"Deleted {deleted_count} old script tasks")
+```
+
+#### `delete_by_interval(interval: str) -> int`
+Delete all scheduled tasks with a specific interval. Returns number of deleted tasks.
+
+```python
+deleted_count = interface.delete_by_interval("*/5 * * * *")
+print(f"Deleted {deleted_count} tasks that ran every 5 minutes")
+```
+
+#### `update_command(cron_id: str, new_command: str) -> bool`
+Update only the command of a scheduled task.
+
+```python
+success = interface.update_command("my-task-id", "new_command.sh")
+```
+
+#### `update_interval(cron_id: str, new_interval: str) -> bool`
+Update only the interval of a scheduled task.
+
+```python
+success = interface.update_interval("my-task-id", "0 3 * * *")
+```
+
+#### `duplicate(cron_id: str, new_interval: str = None) -> Optional[Cron]`
+Duplicate a scheduled task with optional new interval.
+
+```python
+# Duplicate with same interval
+duplicated = interface.duplicate("original-task-id")
+
+# Duplicate with new interval
+duplicated = interface.duplicate("original-task-id", "0 4 * * *")
+```
+
+### Cron Object Methods
+
+#### `to_dict() -> Dict[str, Any]`
+Convert Cron object to dictionary.
+
+```python
+cron = interface.add("echo test", "* * * * *")
+cron_dict = cron.to_dict()
+# Returns: {'id': 'uuid', 'command': 'echo test', 'interval': '* * * * *'}
+```
+
+#### `from_dict(data: Dict[str, Any]) -> Cron`
+Create Cron object from dictionary.
+
+```python
+cron_data = {'id': 'my-id', 'command': 'echo test', 'interval': '* * * * *'}
+cron = Cron.from_dict(cron_data)
 ```
 
 ## 🖥️ Platform-Specific Features
