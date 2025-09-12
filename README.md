@@ -425,7 +425,7 @@ pytest tests/test_unix.py -v
 # Run with coverage
 pytest tests/ --cov=ppycron --cov-report=html
 
-# Current test results: 97 tests passing (100% success rate)
+# Current test results: 138 tests passing (100% success rate)
 ```
 
 ## Installation from Source
@@ -460,7 +460,7 @@ pytest tests/ -v
 
 ### Development Guidelines
 
-- Ensure all tests pass (97/97)
+- Ensure all tests pass (138/138)
 - Add tests for new features
 - Follow the existing code style
 - Update documentation as needed
@@ -480,7 +480,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - ✅ **Core Features**: Complete and tested
 - ✅ **Cross-Platform Support**: Unix/Linux and Windows
-- ✅ **Test Coverage**: 97 tests passing (100%)
+- ✅ **Test Coverage**: 138 tests passing (100%)
 - ✅ **Documentation**: Comprehensive and up-to-date
 - ✅ **Production Ready**: Stable and reliable
 
