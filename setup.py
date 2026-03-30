@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ppycron',
-    version="1.1.0",
+    version="1.2.0",
     packages=find_packages(),
     url='https://github.com/marciobbj/ppycron',
     install_requires=[
@@ -22,6 +22,11 @@ setup(
         "tomli>=2.0.1",
         "typing_extensions>=4.2.0",
     ],
+    entry_points={
+        'console_scripts': [
+            'ppycron=ppycron.cli:main',
+        ],
+    },
     license='MIT License',
     author='Marcio Bernardes Barbosa Junior',
     author_email='marciobernardes@live.com',
