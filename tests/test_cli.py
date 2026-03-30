@@ -587,3 +587,21 @@ class TestPlatformDetection:
                 interface = _get_interface()
         from ppycron.src.windows import WindowsInterface
         assert isinstance(interface, WindowsInterface)
+
+    def test_get_interface_unix_not_installed(self, runner):
+        """When crontab is not installed, CLI shows install instructions and exits."""
+        with patch("ppycron.cli.platform.system", return_value="Linux"):
+            with patch("ppycron.src.unix.subprocess.run", side_effect=FileNotFoundError):
+                result = runner.invoke(cli, ["list"])
+        assert result.exit_code != 0
+        assert "crontab is not installed" in result.output
+        assert "Arch Linux" in result.output
+        assert "Debian/Ubuntu" in result.output
+
+    def test_get_interface_windows_not_installed(self, runner):
+        """When schtasks is not available, CLI shows helpful message and exits."""
+        with patch("ppycron.cli.platform.system", return_value="Windows"):
+            with patch("ppycron.src.windows.subprocess.run", side_effect=FileNotFoundError):
+                result = runner.invoke(cli, ["list"])
+        assert result.exit_code != 0
+        assert "Task Scheduler" in result.output

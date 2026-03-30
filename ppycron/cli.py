@@ -26,12 +26,30 @@ from ppycron.src.base import Cron
 
 def _get_interface():
     """Get the appropriate interface for the current operating system."""
-    if platform.system() == "Windows":
-        from ppycron.src.windows import WindowsInterface
-        return WindowsInterface()
-    else:
-        from ppycron.src.unix import UnixInterface
-        return UnixInterface()
+    system = platform.system()
+    try:
+        if system == "Windows":
+            from ppycron.src.windows import WindowsInterface
+            return WindowsInterface()
+        else:
+            from ppycron.src.unix import UnixInterface
+            return UnixInterface()
+    except RuntimeError:
+        if system == "Windows":
+            click.echo(click.style(
+                "✗ Windows Task Scheduler (schtasks) is not available.\n"
+                "  Please ensure Task Scheduler service is running.",
+                fg="red"), err=True)
+        else:
+            click.echo(click.style(
+                "✗ crontab is not installed on this system.\n"
+                "  Install it with one of the following commands:\n\n"
+                "    Arch Linux:     sudo pacman -S cronie && sudo systemctl enable --now cronie\n"
+                "    Debian/Ubuntu:  sudo apt install cron\n"
+                "    Fedora/RHEL:    sudo dnf install cronie\n"
+                "    macOS:          cron is pre-installed\n",
+                fg="red"), err=True)
+        sys.exit(1)
 
 
 def _format_cron(cron: Cron, output_format: str = "table") -> str:

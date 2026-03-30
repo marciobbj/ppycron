@@ -55,123 +55,144 @@ tasks = interface.get_all()
 print(f"Total tasks: {len(tasks)}")
 ```
 
-## CLI Usage
+## 🖥️ CLI Usage
 
 After installing PPyCron, the `ppycron` command is available globally:
 
 ### Adding a Cronjob
 
 ```bash
-# Add a task that runs every 5 minutes
-ppycron add --command "echo hello" --interval "*/5 * * * *"
+$ ppycron add -c "echo 'Hello PPyCron!'" -i "*/5 * * * *"
+✓ Cronjob created successfully!
 
-# Short form
-ppycron add -c "python /path/to/script.py" -i "0 2 * * *"
+  ID:       4fea5214-7b59-44e7-a940-e219c294e6f6
+  Command:  echo 'Hello PPyCron!'
+  Interval: */5 * * * *
 
-# Output as JSON
-ppycron add -c "backup.sh" -i "30 2 * * *" --format json
+$ ppycron add -c "python3 /tmp/backup.py" -i "0 2 * * *"
+✓ Cronjob created successfully!
+
+  ID:       f7175ab2-641c-4fb6-b0f2-36b039909e32
+  Command:  python3 /tmp/backup.py
+  Interval: 0 2 * * *
 ```
 
 ### Listing All Cronjobs
 
 ```bash
-# Table format (default)
-ppycron list
+$ ppycron list
+Found 2 cronjob(s):
 
-# JSON format
-ppycron list --format json
+[1] 4fea5214-7b59-44e7-a940-e219c294e6f6
+    Command:  echo 'Hello PPyCron!'
+    Interval: */5 * * * *
+
+[2] f7175ab2-641c-4fb6-b0f2-36b039909e32
+    Command:  python3 /tmp/backup.py
+    Interval: 0 2 * * *
 ```
 
-### Getting a Cronjob by ID
+### Counting and Validating
 
 ```bash
-ppycron get --id abc123-def456
+$ ppycron count
+Total cronjobs: 2
 
-# JSON output
-ppycron get -i abc123-def456 -f json
+$ ppycron validate -i "*/10 * * * *"
+✓ '*/10 * * * *' is a valid cron format.
+
+$ ppycron validate -i "60 * * * *"
+✗ '60 * * * *' is NOT a valid cron format.
+```
+
+### JSON Output
+
+```bash
+$ ppycron list -f json
+[
+  {
+    "id": "4fea5214-7b59-44e7-a940-e219c294e6f6",
+    "command": "echo 'Hello PPyCron!'",
+    "interval": "*/5 * * * *"
+  },
+  {
+    "id": "f7175ab2-641c-4fb6-b0f2-36b039909e32",
+    "command": "python3 /tmp/backup.py",
+    "interval": "0 2 * * *"
+  }
+]
 ```
 
 ### Editing a Cronjob
 
 ```bash
 # Update the command
-ppycron edit --id abc123 --command "new_command.sh"
+$ ppycron edit --id abc123 --command "new_command.sh"
+✓ Cronjob updated successfully!
 
 # Update the interval
-ppycron edit --id abc123 -I "0 3 * * *"
+$ ppycron edit --id abc123 -I "0 3 * * *"
 
 # Update both
-ppycron edit --id abc123 -c "updated.sh" -I "*/10 * * * *"
+$ ppycron edit --id abc123 -c "updated.sh" -I "*/10 * * * *"
 ```
 
 ### Deleting a Cronjob
 
 ```bash
 # With confirmation prompt
-ppycron delete --id abc123
+$ ppycron delete --id abc123
+Are you sure you want to delete cronjob 'abc123'? [y/N]: y
+✓ Cronjob deleted successfully!
 
 # Skip confirmation
-ppycron delete --id abc123 --yes
+$ ppycron delete --id abc123 --yes
+✓ Cronjob deleted successfully!
 ```
 
 ### Clearing All Cronjobs
 
 ```bash
-# With confirmation prompt
-ppycron clear
-
-# Skip confirmation
-ppycron clear --yes
-```
-
-### Validating a Cron Format
-
-```bash
-ppycron validate --interval "*/5 * * * *"   # ✓ Valid
-ppycron validate --interval "60 * * * *"     # ✗ Invalid
-```
-
-### Counting Cronjobs
-
-```bash
-ppycron count
+$ ppycron clear -y
+✓ All cronjobs cleared successfully!
 ```
 
 ### Searching Cronjobs
 
 ```bash
 # Search by command
-ppycron search --command "backup.sh"
+$ ppycron search --command "backup.sh"
 
 # Search by interval
-ppycron search --interval "0 2 * * *"
+$ ppycron search --interval "0 2 * * *"
 
 # JSON output
-ppycron search -c "backup" -f json
+$ ppycron search -c "backup" -f json
 ```
 
 ### Duplicating a Cronjob
 
 ```bash
 # Duplicate with same interval
-ppycron duplicate --id abc123
+$ ppycron duplicate --id abc123
 
 # Duplicate with new interval
-ppycron duplicate --id abc123 --interval "0 4 * * *"
+$ ppycron duplicate --id abc123 --interval "0 4 * * *"
 ```
 
 ### Global Options
 
 ```bash
 # Show version
-ppycron --version
+$ ppycron --version
+ppycron, version 1.1.0
 
 # Enable verbose logging
-ppycron -v list
+$ ppycron -v list
 
 # Show help
-ppycron --help
-ppycron add --help
+$ ppycron --help
+$ ppycron add --help
 ```
 
 ### CLI Command Reference
