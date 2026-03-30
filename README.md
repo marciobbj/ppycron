@@ -3,7 +3,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://img.shields.io/badge/tests-200%20passing%20%F0%9F%8E%89-brightgreen.svg)](https://github.com/marciobbj/ppycron)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/yourusername/ppycron)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/marciobbj/ppycron)
 
 **PPyCron** is a modern, cross-platform Python library and CLI tool for managing scheduled tasks. It provides a unified API and command-line interface for both Unix/Linux cron jobs and Windows Task Scheduler, making it easy to schedule and manage tasks across different operating systems.
 
@@ -590,7 +590,7 @@ pytest tests/ --cov=ppycron --cov-report=html
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ppycron.git
+git clone https://github.com/marciobbj/ppycron.git
 cd ppycron
 
 # Install in development mode
