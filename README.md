@@ -2,23 +2,25 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-138%20passing%20%F0%9F%8E%89-brightgreen.svg)](https://github.com/yourusername/ppycron)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/yourusername/ppycron)
+[![Tests](https://img.shields.io/badge/tests-200%20passing%20%F0%9F%8E%89-brightgreen.svg)](https://github.com/marciobbj/ppycron)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/marciobbj/ppycron)
 
-**PPyCron** is a modern, cross-platform Python library for managing scheduled tasks. It provides a unified API for both Unix/Linux cron jobs and Windows Task Scheduler, making it easy to schedule and manage tasks across different operating systems.
+**PPyCron** is a modern, cross-platform Python library and CLI tool for managing scheduled tasks. It provides a unified API and command-line interface for both Unix/Linux cron jobs and Windows Task Scheduler, making it easy to schedule and manage tasks across different operating systems.
 
 ## Features
 
 - **Cross-Platform Support**: Works on Unix/Linux and Windows
+- **CLI Tool**: Full-featured command-line interface with 10 commands
 - **Robust Validation**: Validates cron formats and command syntax
 - **Comprehensive Logging**: Detailed logging for debugging and monitoring
 - **Unified API**: Same interface across all platforms
 - **Advanced Queries**: Find tasks by ID, get all tasks, validate formats
 - **High Performance**: Optimized for handling large numbers of tasks
-- **Fully Tested**: 138 tests with 100% success rate
+- **Fully Tested**: 200 tests with 100% success rate
 - **Production Ready**: Stable and reliable for production use
 - **Auxiliary Methods**: Helper methods for common operations
 - **Data Persistence**: Jobs created via API persist correctly
+- **Multiple Output Formats**: Table and JSON output for CLI commands
 
 ## Quick Start
 
@@ -52,6 +54,161 @@ print(f"Created task with ID: {cron.id}")
 tasks = interface.get_all()
 print(f"Total tasks: {len(tasks)}")
 ```
+
+## 🖥️ CLI Usage
+
+After installing PPyCron, the `ppycron` command is available globally:
+
+### Adding a Cronjob
+
+```bash
+$ ppycron add -c "echo 'Hello PPyCron!'" -i "*/5 * * * *"
+✓ Cronjob created successfully!
+
+  ID:       4fea5214-7b59-44e7-a940-e219c294e6f6
+  Command:  echo 'Hello PPyCron!'
+  Interval: */5 * * * *
+
+$ ppycron add -c "python3 /tmp/backup.py" -i "0 2 * * *"
+✓ Cronjob created successfully!
+
+  ID:       f7175ab2-641c-4fb6-b0f2-36b039909e32
+  Command:  python3 /tmp/backup.py
+  Interval: 0 2 * * *
+```
+
+### Listing All Cronjobs
+
+```bash
+$ ppycron list
+Found 2 cronjob(s):
+
+[1] 4fea5214-7b59-44e7-a940-e219c294e6f6
+    Command:  echo 'Hello PPyCron!'
+    Interval: */5 * * * *
+
+[2] f7175ab2-641c-4fb6-b0f2-36b039909e32
+    Command:  python3 /tmp/backup.py
+    Interval: 0 2 * * *
+```
+
+### Counting and Validating
+
+```bash
+$ ppycron count
+Total cronjobs: 2
+
+$ ppycron validate -i "*/10 * * * *"
+✓ '*/10 * * * *' is a valid cron format.
+
+$ ppycron validate -i "60 * * * *"
+✗ '60 * * * *' is NOT a valid cron format.
+```
+
+### JSON Output
+
+```bash
+$ ppycron list -f json
+[
+  {
+    "id": "4fea5214-7b59-44e7-a940-e219c294e6f6",
+    "command": "echo 'Hello PPyCron!'",
+    "interval": "*/5 * * * *"
+  },
+  {
+    "id": "f7175ab2-641c-4fb6-b0f2-36b039909e32",
+    "command": "python3 /tmp/backup.py",
+    "interval": "0 2 * * *"
+  }
+]
+```
+
+### Editing a Cronjob
+
+```bash
+# Update the command
+$ ppycron edit --id abc123 --command "new_command.sh"
+✓ Cronjob updated successfully!
+
+# Update the interval
+$ ppycron edit --id abc123 -I "0 3 * * *"
+
+# Update both
+$ ppycron edit --id abc123 -c "updated.sh" -I "*/10 * * * *"
+```
+
+### Deleting a Cronjob
+
+```bash
+# With confirmation prompt
+$ ppycron delete --id abc123
+Are you sure you want to delete cronjob 'abc123'? [y/N]: y
+✓ Cronjob deleted successfully!
+
+# Skip confirmation
+$ ppycron delete --id abc123 --yes
+✓ Cronjob deleted successfully!
+```
+
+### Clearing All Cronjobs
+
+```bash
+$ ppycron clear -y
+✓ All cronjobs cleared successfully!
+```
+
+### Searching Cronjobs
+
+```bash
+# Search by command
+$ ppycron search --command "backup.sh"
+
+# Search by interval
+$ ppycron search --interval "0 2 * * *"
+
+# JSON output
+$ ppycron search -c "backup" -f json
+```
+
+### Duplicating a Cronjob
+
+```bash
+# Duplicate with same interval
+$ ppycron duplicate --id abc123
+
+# Duplicate with new interval
+$ ppycron duplicate --id abc123 --interval "0 4 * * *"
+```
+
+### Global Options
+
+```bash
+# Show version
+$ ppycron --version
+ppycron, version 1.1.0
+
+# Enable verbose logging
+$ ppycron -v list
+
+# Show help
+$ ppycron --help
+$ ppycron add --help
+```
+
+### CLI Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `ppycron add` | Add a new cronjob |
+| `ppycron list` | List all cronjobs |
+| `ppycron get` | Get a cronjob by ID |
+| `ppycron edit` | Edit an existing cronjob |
+| `ppycron delete` | Delete a cronjob by ID |
+| `ppycron clear` | Clear all cronjobs |
+| `ppycron validate` | Validate a cron interval format |
+| `ppycron count` | Count total cronjobs |
+| `ppycron search` | Search cronjobs by command or interval |
+| `ppycron duplicate` | Duplicate an existing cronjob |
 
 ## API Reference
 
@@ -419,20 +576,21 @@ Run the test suite:
 # Run all tests
 pytest tests/ -v
 
-# Run specific test file
+# Run specific test files
 pytest tests/test_unix.py -v
+pytest tests/test_cli.py -v
 
 # Run with coverage
 pytest tests/ --cov=ppycron --cov-report=html
 
-# Current test results: 138 tests passing (100% success rate)
+# Current test results: 200 tests passing (100% success rate)
 ```
 
 ## Installation from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ppycron.git
+git clone https://github.com/marciobbj/ppycron.git
 cd ppycron
 
 # Install in development mode
@@ -444,7 +602,7 @@ pytest tests/ -v
 
 ## Performance & Reliability
 
-- **100% Test Coverage**: All functionality thoroughly tested
+- **200 Tests**: Library + CLI fully tested (62 CLI tests)
 - **Robust Error Handling**: Graceful handling of system errors
 - **Input Validation**: Comprehensive validation of cron formats
 - **Cross-Platform Compatibility**: Tested on Unix, Linux, and Windows
@@ -460,7 +618,7 @@ pytest tests/ -v
 
 ### Development Guidelines
 
-- Ensure all tests pass (138/138)
+- Ensure all tests pass (200/200)
 - Add tests for new features
 - Follow the existing code style
 - Update documentation as needed
@@ -479,8 +637,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Project Status
 
 - ✅ **Core Features**: Complete and tested
+- ✅ **CLI Tool**: 10 commands with table/JSON output
 - ✅ **Cross-Platform Support**: Unix/Linux and Windows
-- ✅ **Test Coverage**: 138 tests passing (100%)
+- ✅ **Test Coverage**: 200 tests passing (100%)
 - ✅ **Documentation**: Comprehensive and up-to-date
 - ✅ **Production Ready**: Stable and reliable
 
