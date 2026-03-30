@@ -1,8 +1,20 @@
+import os
 from setuptools import setup, find_packages
+
+
+def get_version():
+    """Get the version from ppycron/__init__.py."""
+    init_path = os.path.join(os.path.dirname(__file__), "ppycron", "__init__.py")
+    with open(init_path, "r") as f:
+        for line in f:
+            if line.startswith("__version__"):
+                return line.split("=")[1].strip().strip('"')
+    return "unknown"
+
 
 setup(
     name='ppycron',
-    version="1.2.0",
+    version=get_version(),
     packages=find_packages(),
     url='https://github.com/marciobbj/ppycron',
     install_requires=[

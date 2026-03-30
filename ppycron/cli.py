@@ -21,6 +21,7 @@ import logging
 
 import click
 
+from ppycron import __version__
 from ppycron.src.base import Cron
 
 
@@ -84,7 +85,7 @@ def _format_cron_list(crons: list, output_format: str = "table") -> str:
 
 @click.group()
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging output.")
-@click.version_option(version="1.1.0", prog_name="ppycron")
+@click.version_option(version=__version__, prog_name="ppycron")
 @click.pass_context
 def cli(ctx, verbose):
     """PPyCron - Cross-platform cronjob management CLI.

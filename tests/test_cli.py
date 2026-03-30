@@ -108,9 +108,10 @@ class TestCLIRoot:
         assert "Cross-platform" in result.output
 
     def test_version(self, runner):
+        from ppycron import __version__
         result = runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "1.1.0" in result.output
+        assert __version__ in result.output
 
     def test_verbose_flag(self, runner, mock_interface):
         with patch("ppycron.cli._get_interface", return_value=mock_interface):
