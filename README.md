@@ -55,7 +55,7 @@ tasks = interface.get_all()
 print(f"Total tasks: {len(tasks)}")
 ```
 
-## 🖥️ CLI Usage
+## CLI Usage
 
 After installing PPyCron, the `ppycron` command is available globally:
 
@@ -471,7 +471,7 @@ print(f"Command: {task_details.command}")
 print(f"Interval: {task_details.interval}")
 ```
 
-## 📊 Cron Format Reference
+## Cron Format Reference
 
 ### Basic Format
 ```
@@ -568,7 +568,7 @@ interface = get_interface()
 cron = interface.add(command="my_script.py", interval="0 9 * * 1-5")
 ```
 
-## 🧪 Testing
+## Testing
 
 Run the test suite:
 
