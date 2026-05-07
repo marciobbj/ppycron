@@ -497,7 +497,7 @@ minute hour day month weekday
 | month | 1-12 | Month of the year |
 | weekday | 0-6 | Day of the week (0=Sunday) |
 
-## 🔧 Advanced Usage
+## Advanced Usage
 
 ### Error Handling
 
@@ -632,12 +632,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Project Status
 
-- ✅ **Core Features**: Complete and tested
-- ✅ **CLI Tool**: 10 commands with table/JSON output
-- ✅ **Cross-Platform Support**: Unix/Linux and Windows
-- ✅ **Test Coverage**: 200 tests passing (100%)
-- ✅ **Documentation**: Comprehensive and up-to-date
-- ✅ **Production Ready**: Stable and reliable
+- **Core Features**: Complete and tested
+- **CLI Tool**: 10 commands with table/JSON output
+- **Cross-Platform Support**: Unix/Linux and Windows
+- **Test Coverage**: 200 tests passing (100%)
+- **Documentation**: Comprehensive and up-to-date
+- **Production Ready**: Stable and reliable
 
 ## Use Cases
 
