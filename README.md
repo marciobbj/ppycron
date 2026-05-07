@@ -595,15 +595,6 @@ pip install -e .
 # Run tests
 pytest tests/ -v
 ```
-
-## Performance & Reliability
-
-- **200 Tests**: Library + CLI fully tested (62 CLI tests)
-- **Robust Error Handling**: Graceful handling of system errors
-- **Input Validation**: Comprehensive validation of cron formats
-- **Cross-Platform Compatibility**: Tested on Unix, Linux, and Windows
-- **Production Ready**: Stable and reliable for production environments
-
 ## Contributing
 
 1. Fork the repository
