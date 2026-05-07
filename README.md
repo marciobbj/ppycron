@@ -410,7 +410,7 @@ cron_data = {'id': 'my-id', 'command': 'echo test', 'interval': '* * * * *'}
 cron = Cron.from_dict(cron_data)
 ```
 
-## 🖥️ Platform-Specific Features
+## Platform-Specific Features
 
 ### Unix/Linux Interface
 
