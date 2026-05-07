@@ -16,10 +16,6 @@
 - **Unified API**: Same interface across all platforms
 - **Advanced Queries**: Find tasks by ID, get all tasks, validate formats
 - **High Performance**: Optimized for handling large numbers of tasks
-- **Fully Tested**: 200 tests with 100% success rate
-- **Production Ready**: Stable and reliable for production use
-- **Auxiliary Methods**: Helper methods for common operations
-- **Data Persistence**: Jobs created via API persist correctly
 - **Multiple Output Formats**: Table and JSON output for CLI commands
 
 ## Quick Start
