@@ -5,7 +5,7 @@
 [![Tests](https://img.shields.io/badge/tests-200%20passing%20%F0%9F%8E%89-brightgreen.svg)](https://github.com/marciobbj/ppycron)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/marciobbj/ppycron)
 
-**PPyCron** is a modern, cross-platform Python library and CLI tool for managing scheduled tasks. It provides a unified API and command-line interface for both Unix/Linux cron jobs and Windows Task Scheduler, making it easy to schedule and manage tasks across different operating systems.
+**PPyCron** is a modern, cross-platform Python library and CLI tool for managing scheduled tasks. It provides a unified API and command-line interface for both Unix/Linux cron jobs and Windows Task Scheduler, making it easy to schedule and manage tasks across different operating systems. 
 
 ## Features
 
@@ -17,6 +17,8 @@
 - **Advanced Queries**: Find tasks by ID, get all tasks, validate formats
 - **High Performance**: Optimized for handling large numbers of tasks
 - **Multiple Output Formats**: Table and JSON output for CLI commands
+
+> **NOTE**: Once you delegate cron job management to ppycron on Unix systems, avoid manually editing the cron job file.
 
 ## Quick Start
 
