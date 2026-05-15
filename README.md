@@ -148,7 +148,7 @@ $ ppycron delete --id abc123 --yes
 ✓ Cronjob deleted successfully!
 ```
 
-### Clearing All Cronjobs
+### Clearing All Cronjobs (Use with caution)
 
 ```bash
 $ ppycron clear -y
